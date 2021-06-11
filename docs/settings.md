@@ -44,3 +44,4 @@ In your **`settings.py`**.
 | Setting Name  | Behaviour | Type   | Default |
 | :--------     | :-----    | :----- | :-----  |
 | __DJANGO_MESSAGES_MARK_NEW_THREAD_MESSAGE_AS_DELETED__ | Mark the first message sent as deleted | Boolean | True |
+| __DJANGO_MESSAGES_MARK_THREAD_AS_READ_ON_GET__ | Mark thread as read on get thread | Boolean | False |

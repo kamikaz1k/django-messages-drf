@@ -1,5 +1,6 @@
 import logging
 
+from django.conf import settings
 from rest_framework import status
 from rest_framework.exceptions import NotFound, PermissionDenied
 from rest_framework.generics import ListAPIView
@@ -43,6 +44,9 @@ class ThreadListApiView(DjangoMessageDRFAuthMixin, ThreadMixin, RequireUserConte
         instance = self.get_thread()
         if not instance:
             raise NotFound()
+
+        if getattr(settings, 'DJANGO_MESSAGES_MARK_THREAD_AS_READ_ON_GET', False):
+            instance.userthread_set.filter(user=request.user).update(unread=False)
 
         serializer = self.serializer_class(instance, context=self.get_serializer_context())
         return Response(serializer.data, status=status.HTTP_200_OK)

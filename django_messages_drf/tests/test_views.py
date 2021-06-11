@@ -3,7 +3,7 @@ import uuid
 
 from django.contrib.auth import get_user_model
 from django.db import transaction
-from django.test import RequestFactory, TestCase
+from django.test import override_settings, RequestFactory, TestCase
 from django.urls import reverse
 
 import django_messages_drf.tests.factories
@@ -46,12 +46,35 @@ class BaseTest(WebTest):
     def test_can_get_thread_endpoint(self):
         """User can get to the thread endpoint"""
         user = django_messages_drf.tests.factories.UserFactory()
-        thread = django_messages_drf.tests.factories.ThreadFactory()
+        recipient = django_messages_drf.tests.factories.UserFactory()
+
+        message = Message.new_message(user, [recipient], "Really?", "You can't be serious")
+        thread = message.thread
+
         url = reverse("django_messages_drf:thread", kwargs={'uuid': thread.uuid})
 
-        response = self.app.get(url, user=user)
+        self.assertTrue(thread.userthread_set.filter(user=recipient, unread=True).count() > 0)
+        response = self.app.get(url, user=recipient)
 
         self.assertEqual(200, response.status_code)
+        self.assertTrue(thread.userthread_set.filter(user=recipient, unread=True).count() > 0)
+
+    @override_settings(DJANGO_MESSAGES_MARK_THREAD_AS_READ_ON_GET=True)
+    def test_can_get_thread_endpoint_with_mark_as_read(self):
+        """User can get to the thread endpoint and mark messages as read"""
+        user = django_messages_drf.tests.factories.UserFactory()
+        recipient = django_messages_drf.tests.factories.UserFactory()
+
+        message = Message.new_message(user, [recipient], "Really?", "You can't be serious")
+        thread = message.thread
+
+        url = reverse("django_messages_drf:thread", kwargs={'uuid': thread.uuid})
+
+        self.assertTrue(thread.userthread_set.filter(user=recipient, unread=True).count() > 0)
+        response = self.app.get(url, user=recipient)
+
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(thread.userthread_set.filter(user=recipient, unread=True).count(), 0)
 
     def test_cannot_get_thread_endpoint(self):
         """User cannot get to the thread endpoint"""
